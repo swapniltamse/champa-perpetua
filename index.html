@@ -93,7 +93,7 @@
     }
     
     .portrait canvas {
-      position: absolute;
+      position: relative;
       top: 0;
       left: 0;
       width: 100%;
@@ -208,8 +208,8 @@
     function setupCanvas() {
       canvas.width = canvas.clientWidth;
       canvas.height = canvas.clientHeight;
-      portraitCanvas.width = 350;
-      portraitCanvas.height = 350;
+      portraitCanvas.width = 684;
+      portraitCanvas.height = 907;
     }
 
     window.addEventListener('resize', setupCanvas);
