@@ -134,6 +134,20 @@
       opacity: 1;
       border-bottom: 1px solid #999;
     }
+    
+    .paragraph-container {
+      position: relative;
+      margin-bottom: 60px;
+    }
+    
+    .continue-btn {
+      position: absolute;
+      bottom: -30px;
+      right: 0;
+      font-size: 14px;
+      margin: 0;
+      padding: 5px 0;
+    }
   </style>
 </head>
 <body>
@@ -149,14 +163,13 @@
         <canvas id="artwork"></canvas>
       </div>
       
-      <div class="portrait-container">
+      <div class="portrait-container" style="display: none;" id="portraitContainer">
         <div class="portrait" id="portrait">
           <canvas id="portraitCanvas"></canvas>
         </div>
         <div class="portrait-title" id="portraitTitle">Elegance in Evening Light</div>
       </div>
       
-      <button id="continueBtn">continue</button>
       
       <div class="footer" id="footer">
         With enduring admiration
@@ -183,7 +196,6 @@
     const portraitCanvas = document.getElementById('portraitCanvas');
     const portraitCtx = portraitCanvas.getContext('2d');
     const passagesContainer = document.getElementById('passages');
-    const continueBtn = document.getElementById('continueBtn');
     const footer = document.getElementById('footer');
     const portrait = document.getElementById('portrait');
     const portraitTitle = document.getElementById('portraitTitle');
@@ -282,7 +294,7 @@
         processImage(this);
       };
       
-      img.src = "static-files/champa-diwali-24.jpg";
+      img.src = "images/champa.jpg";
     }
     
     function createPlaceholderPortrait() {
@@ -380,45 +392,65 @@
     }
     
     // Show next passage
-    continueBtn.addEventListener('click', () => {
+    function addNextPassage() {
       if (currentIndex < passages.length) {
+        const paragraphContainer = document.createElement('div');
+        paragraphContainer.classList.add('paragraph-container');
+        
         const p = document.createElement('p');
         p.textContent = passages[currentIndex];
-        passagesContainer.appendChild(p);
+        paragraphContainer.appendChild(p);
         
-        // Trigger animation
+        // Don't add continue button to the last paragraph
+        if (currentIndex < passages.length - 1) {
+          const continueBtn = document.createElement('button');
+          continueBtn.textContent = 'continue';
+          continueBtn.classList.add('continue-btn');
+          continueBtn.addEventListener('click', (e) => {
+            e.target.style.display = 'none'; // Hide this button when clicked
+            addNextPassage();
+          });
+          paragraphContainer.appendChild(continueBtn);
+        } else {
+          // For the last paragraph, show the footer
+          setTimeout(() => {
+            footer.style.opacity = 1;
+          }, 3000);
+        }
+        
+        passagesContainer.appendChild(paragraphContainer);
+        
+        // Trigger fade in
         setTimeout(() => {
           p.classList.add('visible');
         }, 100);
         
+        // Start background animation after first paragraph
+        if (currentIndex === 0 && !animating) {
+          animating = true;
+          initParticles();
+          animate();
+        }
+        
+        // Show portrait at the appropriate moment (after paragraph 3)
+        if (currentIndex === 3 && !portraitRevealed) {
+          portraitRevealed = true;
+          const portraitContainer = document.getElementById('portraitContainer');
+          portraitContainer.style.display = 'block';
+          createPortrait();
+          portrait.classList.add('visible');
+          setTimeout(() => {
+            portraitTitle.style.opacity = 1;
+          }, 1000);
+        }
+        
         currentIndex++;
       }
-      
-      // Start animation after first click
-      if (currentIndex === 1 && !animating) {
-        animating = true;
-        initParticles();
-        animate();
-      }
-      
-      // Show portrait after appropriate passage
-      if (currentIndex === 4 && !portraitRevealed) {
-        portraitRevealed = true;
-        createPortrait();
-        portrait.classList.add('visible');
-        setTimeout(() => {
-          portraitTitle.style.opacity = 1;
-        }, 1000);
-      }
-      
-      // Show footer and hide button when done
-      if (currentIndex >= passages.length) {
-        continueBtn.style.opacity = 0;
-        setTimeout(() => {
-          continueBtn.style.display = 'none';
-          footer.style.opacity = 1;
-        }, 500);
-      }
+    }
+    
+    // Start with the first passage
+    window.addEventListener('load', () => {
+      addNextPassage();
     });
   </script>
 </body>
