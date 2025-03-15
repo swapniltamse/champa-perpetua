@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Tribute</title>
+  <style>
+    body {
+      font-family: 'Baskerville', 'Libre Baskerville', serif;
+      background-color: #fcfcfc;
+      color: #222;
+      line-height: 1.8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+    .container {
+      max-width: 800px;
+      padding: 60px;
+      background-color: white;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+    .content {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-weight: normal;
+      font-size: 28px;
+      margin-bottom: 40px;
+      letter-spacing: 0.5px;
+      text-align: center;
+      color: #111;
+    }
+    p {
+      font-size: 18px;
+      margin-bottom: 25px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 1.5s ease, transform 1.5s ease;
+    }
+    .visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .divider {
+      width: 80px;
+      height: 1px;
+      background-color: #ddd;
+      margin: 40px auto;
+    }
+    .canvas-container {
+      width: 100%;
+      height: 300px;
+      margin: 50px 0;
+      position: relative;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .portrait-container {
+      width: 100%;
+      margin: 60px auto;
+      text-align: center;
+      position: relative;
+    }
+    
+    .portrait {
+      width: 350px;
+      height: 400px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 2s ease, transform 2s ease;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+    
+    .portrait.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .portrait canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .portrait-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      letter-spacing: 1px;
+      margin-top: 25px;
+      color: #444;
+      opacity: 0;
+      transition: opacity 2s ease 1s;
+    }
+    .footer {
+      text-align: right;
+      font-style: italic;
+      margin-top: 60px;
+      opacity: 0;
+      transition: opacity 3s ease;
+    }
+    button {
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: 16px;
+      color: #666;
+      cursor: pointer;
+      display: block;
+      margin: 40px auto;
+      opacity: 0.7;
+      padding: 10px 0;
+      transition: opacity 0.3s ease;
+      border-bottom: 1px solid transparent;
+    }
+    button:hover {
+      opacity: 1;
+      border-bottom: 1px solid #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="content">
+      <h1>For her, whose grace is my constant inspiration</h1>
+      
+      <div id="passages">
+        <!-- Paragraphs will appear here -->
+      </div>
+      
+      <div class="canvas-container">
+        <canvas id="artwork"></canvas>
+      </div>
+      
+      <div class="portrait-container">
+        <div class="portrait" id="portrait">
+          <canvas id="portraitCanvas"></canvas>
+        </div>
+        <div class="portrait-title" id="portraitTitle">Elegance in Evening Light</div>
+      </div>
+      
+      <button id="continueBtn">continue</button>
+      
+      <div class="footer" id="footer">
+        With enduring admiration
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // These passages can be customized with your own reflections
+    const passages = [
+      "In the quiet moments of morning light, when time seems suspended between night and day, I find myself contemplating the extraordinary fortune of sharing my life with you.",
+      
+      "The painters of old sought to capture the essence of beauty with pigment and canvas, transforming the ephemeral into the eternal. I, with a different medium, attempt the same profound homage.",
+      
+      "What M.F. Husain expressed through his bold, vibrant figures of Madhuri, and  Michelangelo through his masterful sculptures like David that you love, I can only endeavor to honor through patterns and algorithms – a different language for the same timeless sentiment.",
+      
+      "The portrait you see emerges with subtle enhancement, preserving the authentic beauty of the moment while adding a gentle touch of artistry – much like how memory itself transforms our experiences, heightening their significance while maintaining their truth.",
+      
+      "This is my humble attempt to translate into form what words cannot adequately express: the quiet reverence I feel when I look at you, even after all this time."
+    ];
+
+    const canvas = document.getElementById('artwork');
+    const ctx = canvas.getContext('2d');
+    const portraitCanvas = document.getElementById('portraitCanvas');
+    const portraitCtx = portraitCanvas.getContext('2d');
+    const passagesContainer = document.getElementById('passages');
+    const continueBtn = document.getElementById('continueBtn');
+    const footer = document.getElementById('footer');
+    const portrait = document.getElementById('portrait');
+    const portraitTitle = document.getElementById('portraitTitle');
+    let currentIndex = 0;
+    let particles = [];
+    let animating = false;
+    let portraitRevealed = false;
+
+    // Set canvas size
+    function setupCanvas() {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+      portraitCanvas.width = 350;
+      portraitCanvas.height = 350;
+    }
+
+    window.addEventListener('resize', setupCanvas);
+    setupCanvas();
+
+    // Particle class for the subtle animation
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedX = Math.random() * 0.3 - 0.15;
+        this.speedY = Math.random() * 0.3 - 0.15;
+        this.color = `rgba(60, 60, 60, ${Math.random() * 0.15 + 0.05})`;
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        
+        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Initialize particles
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < 50; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      if (!animating) return;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw connecting lines
+      ctx.strokeStyle = 'rgba(60, 60, 60, 0.03)';
+      ctx.lineWidth = 0.5;
+      
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < 100) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      
+      // Update and draw particles
+      particles.forEach(particle => {
+        particle.update();
+        particle.draw();
+      });
+      
+      requestAnimationFrame(animate);
+    }
+
+    // Create NFT-style portrait effect
+    function createPortrait() {
+      // Load the image
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = function() {
+        // Process the image once loaded
+        processImage(this);
+      };
+      
+      img.src = "/static-files/champa-diwali-24";
+    }
+    
+    function createPlaceholderPortrait() {
+      portraitCtx.fillStyle = '#f5f5f5';
+      portraitCtx.fillRect(0, 0, portraitCanvas.width, portraitCanvas.height);
+      
+      // Create an abstract portrait-like image with golden ratio proportions
+      const phi = (1 + Math.sqrt(5)) / 2; // Golden ratio
+      
+      // Create background
+      let gradient = portraitCtx.createLinearGradient(0, 0, portraitCanvas.width, portraitCanvas.height);
+      gradient.addColorStop(0, '#f0e6e6');
+      gradient.addColorStop(1, '#e6e6f0');
+      portraitCtx.fillStyle = gradient;
+      portraitCtx.fillRect(0, 0, portraitCanvas.width, portraitCanvas.height);
+      
+      // Create elegant abstract shapes
+      for (let i = 0; i < 30; i++) {
+        const x = Math.sin(i * phi) * portraitCanvas.width/2 + portraitCanvas.width/2;
+        const y = Math.cos(i * phi) * portraitCanvas.height/2 + portraitCanvas.height/2;
+        const size = Math.max(5, 30 * Math.sin(i * 0.4));
+        
+        portraitCtx.save();
+        portraitCtx.translate(x, y);
+        portraitCtx.rotate(i * phi);
+        
+        gradient = portraitCtx.createLinearGradient(-size, -size, size, size);
+        gradient.addColorStop(0, `rgba(${150 + i*3}, ${100 + i*2}, ${120 + i*4}, 0.6)`);
+        gradient.addColorStop(1, `rgba(${100 + i*2}, ${120 + i*3}, ${150 + i*2}, 0.3)`);
+        
+        portraitCtx.fillStyle = gradient;
+        portraitCtx.beginPath();
+        if (i % 3 === 0) {
+          portraitCtx.arc(0, 0, size, 0, Math.PI * 2);
+        } else {
+          portraitCtx.rect(-size/2, -size/2, size, size);
+        }
+        portraitCtx.fill();
+        portraitCtx.restore();
+      }
+      
+      // Add subtle facial features suggestion in the golden ratio positions
+      const eyeLevel = portraitCanvas.height / (phi + 0.5);
+      const eyeDistance = portraitCanvas.width / (phi * 2);
+      const centerX = portraitCanvas.width / 2;
+      
+      // Subtle face outline
+      portraitCtx.strokeStyle = 'rgba(100, 80, 80, 0.1)';
+      portraitCtx.lineWidth = 2;
+      portraitCtx.beginPath();
+      portraitCtx.ellipse(centerX, portraitCanvas.height/2, portraitCanvas.width/3, portraitCanvas.height/2.5, 0, 0, Math.PI * 2);
+      portraitCtx.stroke();
+    }
+    
+    function processImage(img) {
+      // Draw the base image
+      portraitCtx.drawImage(img, 0, 0, portraitCanvas.width, portraitCanvas.height);
+      
+      // Get image data for applying subtle, elegant filters
+      const imageData = portraitCtx.getImageData(0, 0, portraitCanvas.width, portraitCanvas.height);
+      const data = imageData.data;
+      
+      // Apply a subtle, refined filter effect
+      for (let i = 0; i < data.length; i += 4) {
+        // Gentle warming filter with subtle contrast enhancement
+        data[i] = Math.min(255, data[i] * 1.05); // Slightly enhance red
+        data[i+1] = Math.min(255, data[i+1] * 1.02); // Slightly enhance green
+        data[i+2] = Math.min(255, data[i+2] * 0.98); // Slightly reduce blue for warmth
+      }
+      
+      // Apply the filtered image data
+      portraitCtx.putImageData(imageData, 0, 0);
+      
+      // Add a subtle vignette effect for a classic portrait look
+      portraitCtx.globalCompositeOperation = 'source-over';
+      const gradient = portraitCtx.createRadialGradient(
+        portraitCanvas.width/2, portraitCanvas.height/2, portraitCanvas.width * 0.3,
+        portraitCanvas.width/2, portraitCanvas.height/2, portraitCanvas.width * 0.9
+      );
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+      
+      portraitCtx.fillStyle = gradient;
+      portraitCtx.fillRect(0, 0, portraitCanvas.width, portraitCanvas.height);
+      
+      // Add a subtle border/frame
+      portraitCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      portraitCtx.lineWidth = 3;
+      portraitCtx.strokeRect(5, 5, portraitCanvas.width - 10, portraitCanvas.height - 10);
+      
+      // Add an inner, more subtle frame
+      portraitCtx.strokeStyle = 'rgba(218, 165, 32, 0.2)';
+      portraitCtx.lineWidth = 1;
+      portraitCtx.strokeRect(15, 15, portraitCanvas.width - 30, portraitCanvas.height - 30);
+    }
+    
+    // Show next passage
+    continueBtn.addEventListener('click', () => {
+      if (currentIndex < passages.length) {
+        const p = document.createElement('p');
+        p.textContent = passages[currentIndex];
+        passagesContainer.appendChild(p);
+        
+        // Trigger animation
+        setTimeout(() => {
+          p.classList.add('visible');
+        }, 100);
+        
+        currentIndex++;
+      }
+      
+      // Start animation after first click
+      if (currentIndex === 1 && !animating) {
+        animating = true;
+        initParticles();
+        animate();
+      }
+      
+      // Show portrait after appropriate passage
+      if (currentIndex === 4 && !portraitRevealed) {
+        portraitRevealed = true;
+        createPortrait();
+        portrait.classList.add('visible');
+        setTimeout(() => {
+          portraitTitle.style.opacity = 1;
+        }, 1000);
+      }
+      
+      // Show footer and hide button when done
+      if (currentIndex >= passages.length) {
+        continueBtn.style.opacity = 0;
+        setTimeout(() => {
+          continueBtn.style.display = 'none';
+          footer.style.opacity = 1;
+        }, 500);
+      }
+    });
+  </script>
+</body>
+</html>
