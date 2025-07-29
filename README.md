@@ -39,7 +39,7 @@ The site features:
 
 ## Viewing the Project
 
-The project can be viewed at: [https://swapniltamse.github.io/champa-perpetua](https://swapniltamse.github.io/champa-perpetua)
+The project can be viewed at: https://champa.netlify.app/
 
 ---
 
