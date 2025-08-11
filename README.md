@@ -39,7 +39,7 @@ The site features:
 
 ## Viewing the Project
 
-The project can be viewed at: https://champa.netlify.app/
+The project can be viewed at: https://www.SwapnilTamse.com/champa
 
 ---
 
